@@ -1,0 +1,49 @@
+trigger:
+- main
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      name: sha
+    steps: 
+    - task: TerraformTask@5
+      displayName: Tf init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'sc'
+        backendAzureRmResourceGroupName: 'del'
+        backendAzureRmStorageAccountName: 'sa485575635'
+        backendAzureRmContainerName: 'check'
+        backendAzureRmKey: 'tfstate'
+    - task: TerraformTask@5
+      displayName: Tf validate 
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+    - task: TerraformTask@5
+      displayName: Tf plan 
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        commandOptions: '-out $(Build.SourcesDirectory)/tfplanfile'
+        environmentServiceNameAzureRM: 'sc'
+    - task: ArchiveFiles@2
+      displayName: Tf archieve 
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)'
+        includeRootFolder: true
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: '$(Build.BuildId).build'
+        publishLocation: 'Container'
+    - task: TerraformTask@5
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        environmentServiceNameAzureRM: 'sc'

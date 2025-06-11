@@ -1,0 +1,25 @@
+trigger:
+- main  # Replace with your branch name (default is 'main')
+
+pool:
+  name: sha
+
+steps:
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'static-site'
+
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: 'sc'  # We'll set this up in the next step
+    appType: 'webAppLinux'
+    appName: 'static-website'  # Your Web App Name
+    package: '$(Build.ArtifactStagingDirectory)'
+    RuntimeStack: 'STATICSITE|1.0'
